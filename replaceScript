@@ -1,0 +1,51 @@
+#!/bin/bash
+
+#Param1: $1 - Rules File: Content searchString and replaceString
+#	      Format each line:   "searchString"="replaceString" 
+#Param2: $2 - File want to replace
+#Param3: $3 - Output name
+
+#Define replace funtion
+doReplace () {
+	echo "Search String:$1"
+	echo "Replace String:$2"
+	echo "Param3:$3"
+	echo "String in param $3"
+	cat $3
+	sed -i '' "s|$1|$2|g" $3      #Run on Mac
+	#sed -i    "s|$1|$2|g" $3     #Others
+	echo "After replace"
+	cat $3
+}
+
+#Set Regex
+regex='"(.+)"="(.+)"'
+echo "Regex=${regex}"
+
+#Create temp file
+_tempFile=$(mktemp)
+cat $2 > ${_tempFile}
+
+#Loops 
+_rulesFile=$1
+while IFS= read -r line
+do
+	echo "=================RULE======================"
+	echo "$line"
+	if [[ $line =~ $regex ]]
+	then
+		_searchString="${BASH_REMATCH[1]}"
+		echo "Regex1:${_searchString}"
+		_replaceString="${BASH_REMATCH[2]}"
+		echo "Regex2:${_replaceString}"
+		#Replace
+		doReplace ${_searchString} ${_replaceString} ${_tempFile}
+    	else
+        	echo "${line} doesn't match with regex ${regex}"
+    	fi
+
+done < "${_rulesFile}"
+
+#Create output file
+cat ${_tempFile} > "./$3"
+rm -f ${_tempFile}
